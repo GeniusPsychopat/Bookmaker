@@ -15,10 +15,11 @@ from tkinter import filedialog, dnd, Button, IntVar #GUI
 import os                                           #file manipulation
 import glob                                         #file manipulation
 import pytesseract                                  #machine-text reading
-#from pdf2image import convert_from_path             #conversion from pdf to an img
+#from pdf2image import convert_from_path            #conversion from pdf to an img
 from PIL import Image, ImageFile                    #img manipulationi
-import re
+#import re
 #import fitz
+import shutil
 
 #var/config
 ImageFile.LOAD_TRUNCATED_IMAGES = True              #solves pillow errors
@@ -26,12 +27,11 @@ root = tk.Tk()                                      #root of main window
 imgs = []                                           #array of img to-be-turned into a PDF
 dir = ""                                            #location of directory with img
 Existence = True                                    #Existence of a PDF for manipulation
-choice = tk.IntVar()                                #choice for how much textGen
-deuce = tk.IntVar()                                 #option for splitting double pages
 page = 1                                            #counter for splitting double pages
 
-default0 = tk.StringVar()                           #default option for txtGen
-
+choice = tk.IntVar()                                #choice for how much textGen
+deuce = tk.IntVar()                                 #option for splitting double pages
+bckp = tk.IntVar()                                  #option for creating a backup of the folder with pictures
 
 #functions
     #dir search
@@ -65,7 +65,7 @@ def Cpdf():
 
         Cbrnch = tk.Toplevel(root, bg='gray')
         Cbrnch.title('Create PDF')
-        Cbrnch.geometry("200x150")
+        Cbrnch.geometry("200x200")
        # Cbrnch.iconbitmap(default='Icon.png')
         Cbrnch.resizable(width=False, height=False)
 
@@ -73,9 +73,10 @@ def Cpdf():
         tk.Radiobutton(Cbrnch, text='With text only', variable=choice, value=2, bg='gray').pack(anchor='w')
         tk.Radiobutton(Cbrnch, text='With chapters', variable=choice, value=3, bg='gray').pack(anchor='w')  
 
-        default0.set('Plain')
+        tk.StringVar().set('Plain')
 
         tk.Checkbutton(Cbrnch, text='Split double-pages', variable=deuce, onvalue=1, offvalue=0, bg='gray').pack(anchor='w')
+        tk.Checkbutton(Cbrnch, text='Keep folder', variable=bckp, onvalue=1, offvalue=0, bg='gray').pack(anchor='w')
 
         Ccontinue = tk.Button(Cbrnch, text='Continue', command=Cont).pack(anchor='sw')
 
@@ -93,8 +94,10 @@ def Cont():
 
     Cbrnch.destroy()
 
-    if Existence == False:      #checks the existence of a PDF
-        page = 1
+    if bckp.get() == 1:
+       shutil.copytree(dir, dir + '.bckp') 
+
+    if Existence == False:          #checks the existence of a PDF
 
         for file in os.listdir(dir):
             if not file.endswith(".jpg"):          
@@ -104,10 +107,10 @@ def Cont():
         #           continue
             imgs.append(path)                                              
 
-        imgs.sort(key=str.lower)        #sorts list numericaly and by length (to tolerate double-page names like "10-11")
+        imgs.sort(key=str.lower)    #sorts list numericaly and by length (to tolerate double-page names like "10-11")
         imgs.sort(key=len)
 
-        if deuce.get() == 1:      #splits the double-page if the option was selected
+        if deuce.get() == 1:        #splits the double-page if the option was selected
             for img in imgs:
                 w, h = Image.open(img).size
                 if w > h:
@@ -126,6 +129,11 @@ def Cont():
             for file in os.listdir(dir):
                 if file.endswith('.1.jpg'):
                     os.remove(file)
+
+        imgs.clear()                #resets for new creation of PDF
+        page = 1
+        shutil.rmtree(dir)
+        os.rename(dir + '.bckp', dir)
 
     ContFDebug.insert(index=1.0,chars='Cont finished')
     ContFDebug.configure(state='disabled')
