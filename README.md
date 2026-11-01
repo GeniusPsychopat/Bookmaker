@@ -26,6 +26,8 @@ The core part of the code is **done**. Current efforts are focused on the OCR, a
 well I'm gonna do my best, this project was shelved for a bit, but I am eager to get it out as soon as possible.
 
 ## Install and usage
+*Note: This app requires git (for cloning the repo) and Python installed on your machine to work*
+
 1. Download the zip and extract, or git clone the repo wherever you need it.
 ```
 git clone https://github.com/GeniusPsychopat/Bookmaker.git
