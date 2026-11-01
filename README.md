@@ -27,7 +27,13 @@ well I'm gonna do my best, this project was shelved for a bit, but I am eager to
 
 ## Install and usage
 1. Download the zip and extract, or git clone the repo wherever you need it.
+```
+git clone https://github.com/GeniusPsychopat/Bookmaker.git
+```
 2. cd into the repo you just got.
+```
+cd Bookmaker/
+```
 3. Create a virtual environment and install required libraries.
 ```
 python -m venv Bookmaker
