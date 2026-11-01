@@ -14,7 +14,7 @@ import tkinter as tk                                #GUI
 from tkinter import filedialog, dnd, Button, IntVar #GUI
 import os                                           #file manipulation
 import glob                                         #file manipulation
-import pytesseract                                  #machine-text reading
+#import pytesseract                                  #machine-text reading
 #from pdf2image import convert_from_path            #conversion from pdf to an img
 from PIL import Image, ImageFile                    #img manipulationi
 #import re
@@ -82,6 +82,8 @@ def Cpdf():
 
     #continuation of Cpdf
 def Cont():
+
+    page = 1
 
     Choice = choice.get()                                                   #conversion has to be done here, else everything breaks
     

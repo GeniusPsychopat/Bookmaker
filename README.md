@@ -24,3 +24,18 @@ So far only Linux compatibility is worked on, but I would like to make it Window
 ## When?
 The core part of the code is **done**. Current efforts are focused on the OCR, as for the editing... 
 well I'm gonna do my best, this project was shelved for a bit, but I am eager to get it out as soon as possible.
+
+## Install and usage
+1. Download the zip and extract, or git clone the repo wherever you need it.
+2. cd into the repo you just got.
+3. Create a virtual environment and install required libraries.
+```
+python -m venv Bookmaker
+source Bookmaker/bin/activate
+pip install -r requirements.txt
+```
+4. Run the app.
+```
+python Bookmaker_core_py
+```
+
