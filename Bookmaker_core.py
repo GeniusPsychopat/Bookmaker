@@ -20,6 +20,7 @@ from PIL import Image, ImageFile                    #img manipulationi
 #import re
 #import fitz
 import shutil
+from pypdf import PdfWriter
 
 #var/config
 ImageFile.LOAD_TRUNCATED_IMAGES = True              #solves pillow errors
@@ -53,7 +54,7 @@ def Open():
 
     #PDF creation
 def Cpdf():
-    global Cbrnch, Existence, choice, deuce
+    global Cbrnch, Existence, choice, deuc
 
     #Debug -- turn into a loading bar for V7
     CpdfDebug.insert(index=1.0,chars='Cpdf initialized')
@@ -69,7 +70,7 @@ def Cpdf():
        # Cbrnch.iconbitmap(default='Icon.png')
         Cbrnch.resizable(width=False, height=False)
 
-        tk.Radiobutton(Cbrnch, text='Plain', variable=choice, value=0, bg='gray').pack(anchor='w')
+        tk.Radiobutton(Cbrnch, text='Plain', variable=choice, value=1, bg='gray').pack(anchor='w')
         tk.Radiobutton(Cbrnch, text='With text only', variable=choice, value=2, bg='gray').pack(anchor='w')
         tk.Radiobutton(Cbrnch, text='With chapters', variable=choice, value=3, bg='gray').pack(anchor='w')  
 
@@ -84,7 +85,7 @@ def Cpdf():
 def Cont():
 
     Choice = choice.get()                                                   #conversion has to be done here, else everything breaks
-    
+
         #Debug -- turn into a loading bar for prod
     TvarDebug.insert(index=1.0,chars='Choice='+str(Choice)+',Existence='+str(Existence))
     TvarDebug.configure(state='disabled')
@@ -98,6 +99,8 @@ def Cont():
        shutil.copytree(dir, dir + '.bckp') 
 
     if Existence == False:          #checks the existence of a PDF
+
+        page = 1
 
         for file in os.listdir(dir):
             if not file.endswith(".jpg"):          
@@ -122,6 +125,10 @@ def Cont():
                     imgs.insert(page, img+'.jpg')
                 page += 1
 
+        if choice.get() != 1:
+            txtGen()
+
+'''
         with open(dir+".pdf","wb") as pdf:
             pdf.write(img2pdf.convert(imgs))
 
@@ -131,26 +138,40 @@ def Cont():
                     os.remove(file)
 
         imgs.clear()                #resets for new creation of PDF
-        page = 1
         shutil.rmtree(dir)
         os.rename(dir + '.bckp', dir)
 
     ContFDebug.insert(index=1.0,chars='Cont finished')
     ContFDebug.configure(state='disabled')
 
-'''
-    if Choice != 1:           #if the choice for textGen was chosen, you better start generating text
+    if choice.get() != 1:           #if the choice for textGen was chosen, you better start generating text
         txtGen()
+'''
 
     #generování textu
 def txtGen():
 
+    p = 1
+
+    for img in imgs:
+
+        with open(dir+'tmp'+str(p)+'.pdf', 'w+b') as pdf:
+            pdf.write(pytesseract.image_to_pdf_or_hocr(img, extension='pdf', lang='ces+eng'))
+        p += 1
+
+    for file in os.path.dirname(dir):
+        if not file.endswith('tmp*.pdf'):
+            continue
+        PdfWriter().append(file)
+    PdfWriter().write(dir+'.pdf')
+
+'''
     Iter = 0
 
     for imageInFolder in imgs:
         with open(imageInFolder, 'rb') as file:
             img = Image.open(file)
-            IMGtext = pytesseract.image_to_string(img, config='--psm 6', lang='ces+eng+jpa')
+            IMGtext = pytesseract.image_to_string(img, config='--psm 6', lang='ces+eng')
             with open(str(Iter)+"IMGtext.txt", "a") as IMGtext_file:
                 IMGtext_file.write(IMGtext)
                 Iter = Iter + 1
@@ -170,6 +191,7 @@ def txtGen():
     txtGenDebug.configure(state='disabled')
     
     #if Tvar == 3:                   textGen with highlighted chapters
+'''
 
     #Adding text
 def Atxt():
@@ -180,18 +202,17 @@ def Atxt():
         Tbrnch = tk.Toplevel(root, bg="gray")
         Tbrnch.title('Add text')
         Tbrnch.geometry("200x100")
-        Tbrnch.iconbitmap(default='Icon.png')
+        #Tbrnch.iconbitmap(default='Icon.png')
         Tbrnch.resizable(width=False, height=False)
 
-        tk.Radiobutton(Tbrnch, text='With text only', variable=tvar, value=2, bg='gray').pack(anchor='w')
-        tk.Radiobutton(Tbrnch, text='With chapters', variable=tvar, value=3, bg='gray').pack(anchor='w')
+        tk.Radiobutton(Tbrnch, text='With text only', variable=choice, value=2, bg='gray').pack(anchor='w')
+        tk.Radiobutton(Tbrnch, text='With chapters', variable=choice, value=3, bg='gray').pack(anchor='w')
 
         Acontinue = tk.Button(Tbrnch, text='Continue', command=txtGen).pack(anchor='sw')
    
     #editing the PDF
-def Epdf():
-    print('Epdf')
-'''
+#def Epdf():
+#    print('Epdf')
 
 #main window
 root.title('Bookmaker')
@@ -211,7 +232,7 @@ createPdf.place(x=95,y=5)
 Edit = tk.Button(root, height = 1, width = 7, text='Edit PDF')#, command=Epdf)          #edits the PDF
 Edit.place(x=185,y=5)
 
-addText = tk.Button(root, height = 1, width = 7, text='Add Text')#, command=Atxt)       #Add Text
+addText = tk.Button(root, height = 1, width = 7, text='Add Text', command=Atxt)       #Add Text
 addText.place(x=275,y=5)
 
 #texts
