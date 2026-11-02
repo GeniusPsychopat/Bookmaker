@@ -44,7 +44,7 @@ pip install -r requirements.txt
 ```
 4. Run the app.
 ```
-python Bookmaker_core_py
+python Bookmaker_core.py
 ```
 
 **Currently only the option 'Plain' for txtGen works, the OCR is being worked on.**
