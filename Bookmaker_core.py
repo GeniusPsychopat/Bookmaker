@@ -2,31 +2,36 @@
 V1 - Creation of PDF from imgs ✓
 V2 – Bare-bones UI ✓
 V3 - Generating text ✓
-V4 - Option for creating chapters for browsing the PDF
-V5 - Basic text edit
-V6 - Basic PDF edit
+V4 - Basic PDF edit
+V5 - Basic Text edit 
+V6 - Creating Table of Contents through PdfEdit
 V7 - polish UI
 '''
 
 
-import img2pdf                                      #img to PDF convertor
+import img2pdf                                      #img to PDF convertori
+from pdf2image import convert_from_path
 import tkinter as tk                                #GUI
 from tkinter import filedialog, dnd, Button, IntVar #GUI
 import os                                           #file manipulation
 import glob                                         #file manipulation
 import pytesseract                                  #machine-text reading
-#from pdf2image import convert_from_path            #conversion from pdf to an img
 from PIL import Image, ImageFile                    #img manipulationi
-#import re
-#import fitz
 import shutil
 from pypdf import PdfWriter
+
+from pdf2image.exceptions import (
+    PDFInfoNotInstalledError,
+    PDFPageCountError,
+    PDFSyntaxError
+)
 
 #var/config
 ImageFile.LOAD_TRUNCATED_IMAGES = True              #solves pillow errors
 root = tk.Tk()                                      #root of main window
 imgs = []                                           #array of img to-be-turned into a PDF
 dir = ""                                            #location of directory with img
+PDF = ""
 Existence = True                                    #Existence of a PDF for manipulation
 page = 1                                            #counter for splitting double pages
 pdfs = []                                           #array of pages of PDF to-be-turned into a single PDF
@@ -40,16 +45,14 @@ bckp = tk.IntVar()                                  #option for creating a backu
 def Open():
     global dir
 
-    dir = tk.filedialog.askdirectory(
-    #file = tk.filedialog.askopenfilenames(
-        title='Select a file...',
-        #file=(("jpeg","*.jpg"),("all files","*.*")),       once the OCR and PDF edit is live, this will be used to also search for the PDF
-    )
+    dir = tk.filedialog.askdirectory(title='Select a directory...')
+
     text.configure(state='normal')
     text.insert(index=1.0, chars=str(dir))
     text.configure(state='disabled')
+
         #Debug -- turn into a loading bar for V7
-    DirDebug.insert(index=1.0,chars='Direcotry found')
+    DirDebug.insert(index=1.0,chars='Directory found')
     DirDebug.configure(state='disabled')
 
 
@@ -67,16 +70,11 @@ def Cpdf():
 
         Cbrnch = tk.Toplevel(root, bg='gray')
         Cbrnch.title('Create PDF')
-        Cbrnch.geometry("200x200")
+        Cbrnch.geometry("200x100")
        # Cbrnch.iconbitmap(default='Icon.png')
         Cbrnch.resizable(width=False, height=False)
 
-        tk.Radiobutton(Cbrnch, text='Plain', variable=choice, value=1, bg='gray').pack(anchor='w')
-        tk.Radiobutton(Cbrnch, text='With text only', variable=choice, value=2, bg='gray').pack(anchor='w')
-        #tk.Radiobutton(Cbrnch, text='With chapters', variable=choice, value=3, bg='gray').pack(anchor='w')  
-
-        tk.StringVar().set('Plain')
-
+        tk.Checkbutton(Cbrnch, text='Generate text', variable=choice, onvalue=1, offvalue=0, bg='gray').pack(anchor='w')
         tk.Checkbutton(Cbrnch, text='Split double-pages', variable=deuce, onvalue=1, offvalue=0, bg='gray').pack(anchor='w')
         tk.Checkbutton(Cbrnch, text='Keep folder', variable=bckp, onvalue=1, offvalue=0, bg='gray').pack(anchor='w')
 
@@ -99,45 +97,41 @@ def Cont():
     if bckp.get() == 1:
        shutil.copytree(dir, dir + '.bckp') 
 
-    if Existence == False:          #checks the existence of a PDF
+    page = 1
 
-        page = 1
+    for file in os.listdir(dir):
+        if not file.endswith(".jpg"):          
+            continue
+        path = os.path.join(dir, file)
+        imgs.append(path)                                              
 
-        for file in os.listdir(dir):
-            if not file.endswith(".jpg"):          
-                continue
-            path = os.path.join(dir, file)
-        #    if os.path.isdir(path):
-        #           continue
-            imgs.append(path)                                              
+    imgs.sort(key=str.lower)    #sorts list numericaly and by length (to tolerate double-page names like "10-11")
+    imgs.sort(key=len)
 
-        imgs.sort(key=str.lower)    #sorts list numericaly and by length (to tolerate double-page names like "10-11")
-        imgs.sort(key=len)
+    if deuce.get() == 1:        #splits the double-page if the option was selected
+        for img in imgs:
+            w, h = Image.open(img).size
+            if w > h:
+                Page = Image.open(img)
+                Left = Page.crop((0, 0, w//2, h))
+                Right = Page.crop((w//2, 0, w, h))
+                Left.save(img)
+                Right.save(img + '.jpg')
+                imgs.insert(page, img+'.jpg')
+            page += 1
 
-        if deuce.get() == 1:        #splits the double-page if the option was selected
-            for img in imgs:
-                w, h = Image.open(img).size
-                if w > h:
-                    Page = Image.open(img)
-                    Left = Page.crop((0, 0, w//2, h))
-                    Right = Page.crop((w//2, 0, w, h))
-                    Left.save(img)
-                    Right.save(img + '.jpg')
-                    imgs.insert(page, img+'.jpg')
-                page += 1
+    if choice.get() == 1:
+        txtGen()
 
-        if choice.get() != 1:
-            txtGen()
+    if choice.get() == 0:
+        for img in imgs:
+            with open(dir+'.pdf','wb') as pdf:
+                pdf.write(img2pdf.convert(imgs))
 
-        if deuce == 1:
-            for file in os.listdir(dir):
-                if file.endswith('.1.jpg'):
-                    os.remove(file)
-
-        imgs.clear()                #resets for new creation of PDF
-        shutil.rmtree(dir)
-        if bckp.get() == 1:
-            os.rename(dir + '.bckp', dir)
+    imgs.clear()                #resets for new creation of PDF
+    shutil.rmtree(dir)
+    if bckp.get() == 1:
+        os.rename(dir + '.bckp', dir)
 
     #Debug -- turn into a loading bar for prod
     ContFDebug.insert(index=1.0,chars='Cont finished')
@@ -150,37 +144,50 @@ def txtGen():
     p = 1
 
     for img in imgs:
-        with open(dir+'tmp'+str(p)+'.pdf', 'w+b') as pdf:
+        with open(dir+str(p)+'.pdf', 'w+b') as pdf:
             pdf.write(pytesseract.image_to_pdf_or_hocr(img, extension='pdf', lang='ces+eng'))
-            pdfs.append(dir+'tmp'+str(p)+'.pdf')
+            pdfs.append(dir+str(p)+'.pdf')
         p += 1
+
+    txtGenDebug.insert(index=1.0,chars='Text generated')
+    txtGenDebug.configure(state='disabled')
 
     for pdf in pdfs: 
         merge.append(pdf)
 
-    merge.write(dir+'.pdf')
+    if Existence == False:
+        merge.write(dir+'.pdf')
+    else:
+        merge.write(PDF)
+        shutil.rmtree(dir)
     merge.close()
 
     for pdf in pdfs:
         os.remove(pdf)
     pdfs.clear()
 
-    #Adding text
 def Atxt():
-    global Tbrnch
+    
+    PDF = tk.filedialog.askopenfilename(title='Select a PDF...', defaultextension='.pdf', filetypes=[('PDFs','*.pdf')])
+    os.mkdir(PDF+'.')
+    dir = PDF+'.'
 
-    if dir != "":
+    Existence = True
 
-        Tbrnch = tk.Toplevel(root, bg="gray")
-        Tbrnch.title('Add text')
-        Tbrnch.geometry("200x100")
-        #Tbrnch.iconbitmap(default='Icon.png')
-        Tbrnch.resizable(width=False, height=False)
+    convert_from_path(PDF, output_folder=dir, fmt='jpeg')
 
-        tk.Radiobutton(Tbrnch, text='With text only', variable=choice, value=2, bg='gray').pack(anchor='w')
-        #tk.Radiobutton(Tbrnch, text='With chapters', variable=choice, value=3, bg='gray').pack(anchor='w')
+    os.remove(PDF)
 
-        Acontinue = tk.Button(Tbrnch, text='Continue', command=txtGen).pack(anchor='sw')
+    DirDebug.insert(index=1.0,chars='Directory found')
+    DirDebug.configure(state='disabled')
+
+    for img in os.listdir(dir):
+        path = os.path.join(dir, img)
+        imgs.append(path)
+
+    root.update()
+
+    txtGen()
 
 '''
     #editing the PDF
