@@ -31,7 +31,8 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True              #solves pillow errors
 root = tk.Tk()                                      #root of main window
 imgs = []                                           #array of img to-be-turned into a PDF
 dir = ""                                            #location of directory with img
-PDF = ""
+PDF = ""                                            #location of PDF
+PDF_name = ""                                       #name of the PDF
 Existence = True                                    #Existence of a PDF for manipulation
 page = 1                                            #counter for splitting double pages
 pdfs = []                                           #array of pages of PDF to-be-turned into a single PDF
@@ -52,8 +53,10 @@ def Open():
     text.configure(state='disabled')
 
         #Debug -- turn into a loading bar for V7
-    DirDebug.insert(index=1.0,chars='Directory found')
-    DirDebug.configure(state='disabled')
+    txtDebug.configure(state='normal')
+    txtDebug.delete('1.0','end')
+    txtDebug.insert(index=1.0,chars='Directory found')
+    txtDebug.configure(state='disabled')
 
 
     #PDF creation
@@ -61,8 +64,10 @@ def Cpdf():
     global Cbrnch, Existence, choice, deuc
 
     #Debug -- turn into a loading bar for V7
-    CpdfDebug.insert(index=1.0,chars='Cpdf initialized')
-    CpdfDebug.configure(state='disabled')
+    txtDebug.configure(state='normal')
+    txtDebug.delete('1.0','end')
+    txtDebug.insert(index=1.0,chars='Cpdf initialized')
+    txtDebug.configure(state='disabled')
 
     Existence = False
 
@@ -86,13 +91,13 @@ def Cont():
     Choice = choice.get()                                                   #conversion has to be done here, else everything breaks
 
         #Debug -- turn into a loading bar for prod
-    TvarDebug.insert(index=1.0,chars='Choice='+str(Choice)+',Existence='+str(Existence))
-    TvarDebug.configure(state='disabled')
-    
-    ContDebug.insert(index=1.0,chars='Cont initialized')
-    ContDebug.configure(state='disabled')
+    txtDebug.configure(state='normal')    
+    txtDebug.delete('1.0','end')
+    txtDebug.insert(index=1.0,chars='Cont initialized')
+    txtDebug.configure(state='disabled')
 
     Cbrnch.destroy()
+    Cbrnch.update()
 
     if bckp.get() == 1:
        shutil.copytree(dir, dir + '.bckp') 
@@ -134,8 +139,10 @@ def Cont():
         os.rename(dir + '.bckp', dir)
 
     #Debug -- turn into a loading bar for prod
-    ContFDebug.insert(index=1.0,chars='Cont finished')
-    ContFDebug.configure(state='disabled')
+    txtDebug.configure(state='normal')
+    txtDebug.delete('1.0','end')
+    txtDebug.insert(index=1.0,chars='Cont finished')
+    txtDebug.configure(state='disabled')
 
     #Generating text
 def txtGen():
@@ -149,8 +156,10 @@ def txtGen():
             pdfs.append(dir+str(p)+'.pdf')
         p += 1
 
-    txtGenDebug.insert(index=1.0,chars='Text generated')
-    txtGenDebug.configure(state='disabled')
+    txtDebug.configure(state='normal')
+    txtDebug.delete('1.0','end')
+    txtDebug.insert(index=1.0,chars='Text generated')
+    txtDebug.configure(state='disabled')
 
     for pdf in pdfs: 
         merge.append(pdf)
@@ -158,7 +167,7 @@ def txtGen():
     if Existence == False:
         merge.write(dir+'.pdf')
     else:
-        merge.write(PDF)
+        merge.write(PDF_name)
         shutil.rmtree(dir)
     merge.close()
 
@@ -169,8 +178,18 @@ def txtGen():
 def Atxt():
     
     PDF = tk.filedialog.askopenfilename(title='Select a PDF...', defaultextension='.pdf', filetypes=[('PDFs','*.pdf')])
+    PDF_name = PDF
     os.mkdir(PDF+'.')
     dir = PDF+'.'
+
+    print(PDF_name)
+
+    txtDebug.configure(state='normal')
+    txtDebug.delete('1.0','end')
+    txtDebug.insert(index=1.0,chars='PDF found, preparing for txtGen')
+    txtDebug.configure(state='disabled')
+
+    root.update()
 
     Existence = True
 
@@ -178,12 +197,14 @@ def Atxt():
 
     os.remove(PDF)
 
-    DirDebug.insert(index=1.0,chars='Directory found')
-    DirDebug.configure(state='disabled')
-
     for img in os.listdir(dir):
         path = os.path.join(dir, img)
         imgs.append(path)
+
+    txtDebug.configure(state='normal')
+    txtDebug.delete('1.0','end')
+    txtDebug.insert(index=1.0,chars='PDF prepared for txtGen')
+    txtDebug.configure(state='disabled')
 
     root.update()
 
@@ -228,29 +249,8 @@ FilePthTxt.insert(index=1.0, chars='File Path:')
 FilePthTxt.configure(state='disabled')
 
     #debug  -> turn into a loading bar (maybe keep the text)
-        #directory found
-DirDebug = tk.Text(root, height=1, font=('Helvetica',10),bg='gray',relief='flat')
-DirDebug.place(x=5,y=75)
-
-        #Cpdf initialized
-CpdfDebug = tk.Text(root, height=1, font=('Helvetica',10),bg='gray',relief='flat')
-CpdfDebug.place(x=5,y=95)
-
-TvarDebug = tk.Text(root, height=1, font=('Helvetica',10),bg='gray',relief='flat')
-TvarDebug.place(x=75,y=95)
-
-        #Cont initialized
-ContDebug = tk.Text(root, height=1, font=('Helvetica',10),bg='gray',relief='flat')
-ContDebug.place(x=5,y=95)
-
-        #Cont finished
-ContFDebug = tk.Text(root, height=1, font=('Helvetica',10),bg='gray',relief='flat')
-ContFDebug.place(x=5,y=115)
-
-        #txtGen initialized
-txtGenDebug = tk.Text(root, height=1, font=('Helvetica',10),bg='gray',relief='flat')
-txtGenDebug.place(x=5,y=135)
-
+txtDebug = tk.Text(root, height=1, font=('Helvetica',10), bg='gray', relief='flat')
+txtDebug.place(x=5,y=75)
 
 #sounds (is it really needed?)
 
