@@ -17,9 +17,11 @@ import os                                           #file manipulation
 import glob                                         #file manipulation
 import pytesseract                                  #machine-text reading
 from PIL import Image, ImageFile                    #img manipulationi
-import shutil
-from pypdf import PdfWriter
+import shutil                                       #file manipulation
+from pypdf import PdfWriter, PdfReader              #PDF manipulation
+from typing import List, Union                      
 
+from pypdf.generic import Destination
 from pdf2image.exceptions import (
     PDFInfoNotInstalledError,
     PDFPageCountError,
@@ -32,10 +34,10 @@ root = tk.Tk()                                      #root of main window
 imgs = []                                           #array of img to-be-turned into a PDF
 dir = ""                                            #location of directory with img
 PDF = ""                                            #location of PDF
-PDF_name = ""                                       #name of the PDF
 Existence = True                                    #Existence of a PDF for manipulation
 page = 1                                            #counter for splitting double pages
 pdfs = []                                           #array of pages of PDF to-be-turned into a single PDF
+ToC = []                                            #preservation of Table of Contents of an existing PDF
 
 choice = tk.IntVar()                                #choice for how much textGen
 deuce = tk.IntVar()                                 #option for splitting double pages
@@ -61,7 +63,7 @@ def Open():
 
     #PDF creation
 def Cpdf():
-    global Cbrnch, Existence, choice, deuc
+    global Cbrnch, Existence, choice, deuce
 
     #Debug -- turn into a loading bar for V7
     txtDebug.configure(state='normal')
@@ -87,8 +89,6 @@ def Cpdf():
 
     #continuation of Cpdf
 def Cont():
-
-    Choice = choice.get()                                                   #conversion has to be done here, else everything breaks
 
         #Debug -- turn into a loading bar for prod
     txtDebug.configure(state='normal')    
@@ -167,7 +167,7 @@ def txtGen():
     if Existence == False:
         merge.write(dir+'.pdf')
     else:
-        merge.write(PDF_name)
+        merge.write(PDF)
         shutil.rmtree(dir)
     merge.close()
 
@@ -175,28 +175,35 @@ def txtGen():
         os.remove(pdf)
     pdfs.clear()
 
+    #Proccessing a PDF for txtGen
 def Atxt():
+    global PDF, Existence, dir
     
-    PDF = tk.filedialog.askopenfilename(title='Select a PDF...', defaultextension='.pdf', filetypes=[('PDFs','*.pdf')])
-    PDF_name = PDF
-    os.mkdir(PDF+'.')
-    dir = PDF+'.'
-
-    print(PDF_name)
+    PDF = tk.filedialog.askopenfilename(title='Select a PDF...', 
+                                        defaultextension='.pdf', 
+                                        filetypes=[('PDFs','*.pdf')]
+                                        )
+    #os.mkdir(PDF+'.')
+    #dir = PDF+'.'
 
     txtDebug.configure(state='normal')
     txtDebug.delete('1.0','end')
-    txtDebug.insert(index=1.0,chars='PDF found, preparing for txtGen')
+    txtDebug.insert(index=1.0, chars='PDF found, preparing for txtGen')
     txtDebug.configure(state='disabled')
 
     root.update()
 
+    reader = PdfReader(PDF)
+
+    cOutline(reader.outline, reader)
+
     Existence = True
 
-    convert_from_path(PDF, output_folder=dir, fmt='jpeg')
+    #convert_from_path(PDF, output_folder=dir, fmt='jpeg')
 
-    os.remove(PDF)
+    #os.remove(PDF)
 
+'''
     for img in os.listdir(dir):
         path = os.path.join(dir, img)
         imgs.append(path)
@@ -209,6 +216,33 @@ def Atxt():
     root.update()
 
     txtGen()
+
+'''
+    #Preservetaion of Table of Contents
+def cOutline(outline: List[Union[Destionation, List[Destination]]],
+              reader: PdfReader,
+              level: int = 0
+              ) -> None:
+
+    with open(PDF+'.txt', 'a') as o:
+        for item in outline:
+
+            if isinstance(item, list):
+                cOutline(item, reader, level+1)
+            else:
+                pageNum = reader.get_destination_page_number(item)
+                depth = 1 * level
+        
+                if pageNum is None:
+                    continue
+                else:
+                    ToC.append('%04d'%pageNum + str(depth) + item.title+ '\n')
+
+    ToC.sort(key=str.lower)
+
+    with open(PDF+'.txt', 'w') as w:
+        for line in ToC:
+            w.write(line)
 
 '''
     #editing the PDF
