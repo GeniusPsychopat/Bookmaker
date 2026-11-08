@@ -74,10 +74,10 @@ def Cpdf():
     Existence = False
 
     if dir != "":
-
+        
         Cbrnch = tk.Toplevel(root, bg='gray')
         Cbrnch.title('Create PDF')
-        Cbrnch.geometry("200x100")
+        Cbrnch.geometry("200x120")
        # Cbrnch.iconbitmap(default='Icon.png')
         Cbrnch.resizable(width=False, height=False)
 
@@ -125,15 +125,15 @@ def Cont():
                 imgs.insert(page, img+'.jpg')
             page += 1
 
-    if choice.get() == 1:
+    if choice.get() == 1:       #generates text if the option was selected..
         txtGen()
-
-    if choice.get() == 0:
+    else:                       #..if not, stitches the double pages
         for img in imgs:
             with open(dir+'.pdf','wb') as pdf:
                 pdf.write(img2pdf.convert(imgs))
 
-    imgs.clear()                #resets for new creation of PDF
+        #resets for creation of a new PDF
+    imgs.clear()
     shutil.rmtree(dir)
     if bckp.get() == 1:
         os.rename(dir + '.bckp', dir)
@@ -149,7 +149,8 @@ def txtGen():
 
     merge = PdfWriter()
     p = 1
-
+        
+        #generates text in individual PDFs
     for img in imgs:
         with open(dir+str(p)+'.pdf', 'w+b') as pdf:
             pdf.write(pytesseract.image_to_pdf_or_hocr(img, extension='pdf', lang='ces+eng'))
@@ -161,85 +162,107 @@ def txtGen():
     txtDebug.insert(index=1.0,chars='Text generated')
     txtDebug.configure(state='disabled')
 
+        #stitches the pages together
     for pdf in pdfs: 
         merge.append(pdf)
 
-    if Existence == False:
+    if Existence == False:          #saving output depending on if the PDF was generated or not
         merge.write(dir+'.pdf')
     else:
         merge.write(PDF)
         shutil.rmtree(dir)
+
     merge.close()
 
-    for pdf in pdfs:
+    for pdf in pdfs:                #cleans up
         os.remove(pdf)
     pdfs.clear()
 
-    #Proccessing a PDF for txtGen
+    #Proccessing and post-processing a PDF for txtGen
 def Atxt():
     global PDF, Existence, dir
-    
+      
+      #selecting a PDF
     PDF = tk.filedialog.askopenfilename(title='Select a PDF...', 
                                         defaultextension='.pdf', 
                                         filetypes=[('PDFs','*.pdf')]
                                         )
-    #os.mkdir(PDF+'.')
-    #dir = PDF+'.'
+    os.mkdir(PDF+'.')
+    dir = PDF+'.'
 
     txtDebug.configure(state='normal')
     txtDebug.delete('1.0','end')
     txtDebug.insert(index=1.0, chars='PDF found, preparing for txtGen')
     txtDebug.configure(state='disabled')
-
     root.update()
 
     reader = PdfReader(PDF)
-
     cOutline(reader.outline, reader)
 
+        #preparing the PDF for OCR
     Existence = True
-
-    #convert_from_path(PDF, output_folder=dir, fmt='jpeg')
-
-    #os.remove(PDF)
-
-'''
+    convert_from_path(PDF, output_folder=dir, fmt='jpeg')
+    os.remove(PDF)
     for img in os.listdir(dir):
         path = os.path.join(dir, img)
         imgs.append(path)
+    imgs.sort(key=str.lower)
 
     txtDebug.configure(state='normal')
     txtDebug.delete('1.0','end')
     txtDebug.insert(index=1.0,chars='PDF prepared for txtGen')
     txtDebug.configure(state='disabled')
-
     root.update()
 
     txtGen()
 
-'''
+        #adding back the Table of Contents
+    writer = PdfWriter(clone_from=PDF)
+
+    #with open(PDF+'.txt') as file:      #recovering Table of Contents
+    for line in ToC:
+        if int(line[0]) == 0:
+            headline = writer.add_outline_item(
+            title=line[5:],
+            page_number=int(line[1:5])
+            )
+        elif int(line[0]) == 1:
+            sub_headline = writer.add_outline_item(
+            title=line[5:],
+            page_number=int(line[1:5]),
+            parent=headline
+                    )
+        elif int(line[0]) == 2:
+            writer.add_outline_item(
+            title=(line[5:]),
+            page_number=int(line[1:5]),
+            parent=sub_headline
+                    )
+    writer.write(PDF)
+    os.remove(PDF+'.txt')
+
     #Preservetaion of Table of Contents
 def cOutline(outline: List[Union[Destionation, List[Destination]]],
               reader: PdfReader,
               level: int = 0
               ) -> None:
+    global ToC
 
+            #strips the Table of Contents info from the PDF
     with open(PDF+'.txt', 'a') as o:
         for item in outline:
-
             if isinstance(item, list):
                 cOutline(item, reader, level+1)
             else:
                 pageNum = reader.get_destination_page_number(item)
                 depth = 1 * level
-        
+
                 if pageNum is None:
                     continue
                 else:
-                    ToC.append('%04d'%pageNum + str(depth) + item.title+ '\n')
-
-    ToC.sort(key=str.lower)
-
+                    ToC.append(str(depth) + '%04d'%pageNum + item.title + '\n')
+            
+            #sorts the Table of Contents and writes it into a temp file
     with open(PDF+'.txt', 'w') as w:
         for line in ToC:
             w.write(line)
