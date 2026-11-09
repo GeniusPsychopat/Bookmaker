@@ -9,21 +9,28 @@ Do you have book ripped from an internet library that is only just a couple of s
 
 If yes, then Bookmaker is for you. Currently it lets you choose a folder with images and turns it into a PDF. 
 It can also split double pages if you want them page-by-page, or let you create a backup of the folder so you dont lose them.
-
-OCR for adding text and some light PDF editing for correcting mistakes is also planned, but the goal is to have the core code fully functional first.
+As of the latest update, the OCR is live. If you have a PDF with already set bookmarks, Bookmaker will save them to a text file, and then automaticaly adds them back.
 
 The actual purpose of this is to let me fill in text into PDFs so I can search through my personal digital library easier, 
 but I wanted something fully fleshed-out
 
 ## How?
-The whole thing is python coded, the OCR will be done with pytesseract (a wrapper for Google OCR). I am no profesional, I am mostly learning as I go,
+The whole thing is python coded, the OCR is done with pytesseract (a wrapper for Google OCR). I am no profesional, I am mostly learning as I go,
 so the code can have some weak links.
 
 So far only Linux compatibility is worked on, but I would like to make it Windows compatible as well. (No clue about the difficulty of this)
 
 ## When?
-The core part of the code is **done**. Current efforts are focused on the OCR, as for the editing... 
-well I'm gonna do my best, this project was shelved for a bit, but I am eager to get it out as soon as possible.
+The core part of the code is **done**, as well as the text generation and bookmark preservation. Current efforts are focused on PDF edit, but since the most important part of the code is functional, I'm not gonna make any guarantees. 
+The project was shelved for a bit, but I am eager to get it out as soon as possible.
+
+## To-Do list
+ - PDF edit
+ - Generated-text edit
+ - UI overhaul
+ - Win compatibility
+
+*Note: None of these are set in stone, if I find that they are out of reach for me, I will drop them.*
 
 ## Install and usage
 *Note: This app requires git (for cloning the repo) and Python installed on your machine to work*

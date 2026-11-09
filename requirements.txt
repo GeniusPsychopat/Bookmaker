@@ -1,1 +1,4 @@
 img2pdf
+pytesseract
+pdf2image
+pypdf
