@@ -2,14 +2,14 @@
 V1 - Creation of PDF from imgs ✓
 V2 – Bare-bones UI ✓
 V3 - Generating text ✓
-V4 - Basic PDF edit
-V5 - Basic Text edit 
-V6 - Creating Table of Contents through PdfEdit
+V4 - Creating Table of Contents through PdfEdit ✓
+V5 - Basic PDF edit
+V6 - Basic Text edit 
 V7 - polish UI
 '''
 
 
-import img2pdf                                      #img to PDF convertori
+import img2pdf                                      #img to PDF convertor
 from pdf2image import convert_from_path
 import tkinter as tk                                #GUI
 from tkinter import filedialog, dnd, Button, IntVar #GUI
@@ -17,9 +17,9 @@ import os                                           #file manipulation
 import glob                                         #file manipulation
 import pytesseract                                  #machine-text reading
 from PIL import Image, ImageFile                    #img manipulationi
-import shutil                                       #file manipulation
 from pypdf import PdfWriter, PdfReader              #PDF manipulation
-from typing import List, Union                      
+from typing import List, Union                 
+import shutil
 
 from pypdf.generic import Destination
 from pdf2image.exceptions import (
@@ -37,7 +37,6 @@ PDF = ""                                            #location of PDF
 Existence = True                                    #Existence of a PDF for manipulation
 page = 1                                            #counter for splitting double pages
 pdfs = []                                           #array of pages of PDF to-be-turned into a single PDF
-ToC = []                                            #preservation of Table of Contents of an existing PDF
 
 choice = tk.IntVar()                                #choice for how much textGen
 deuce = tk.IntVar()                                 #option for splitting double pages
@@ -145,10 +144,12 @@ def Cont():
     txtDebug.configure(state='disabled')
 
     #Generating text
-def txtGen():
+def txtGen():       #average time for txtGen is 13 pages per minute, add a countdown for V7
 
     merge = PdfWriter()
     p = 1
+    counter = 2
+    lenght = len(imgs)
         
         #generates text in individual PDFs
     for img in imgs:
@@ -156,6 +157,14 @@ def txtGen():
             pdf.write(pytesseract.image_to_pdf_or_hocr(img, extension='pdf', lang='ces+eng'))
             pdfs.append(dir+str(p)+'.pdf')
         p += 1
+        
+        if p % 2 == 0:
+            txtDebug.configure(state='normal')
+            txtDebug.delete('1.0','end')
+            txtDebug.insert(index=1.0,chars='Generating text ('+ str(counter) + '/' + str(lenght) +')')
+            txtDebug.configure(state='disabled')
+            root.update()
+            counter += 2
 
     txtDebug.configure(state='normal')
     txtDebug.delete('1.0','end')
@@ -218,26 +227,24 @@ def Atxt():
 
         #adding back the Table of Contents
     writer = PdfWriter(clone_from=PDF)
+    with open(PDF+'.txt') as file:      #recovering Table of Contents
+        for line in file.readlines():
+            if int(line[0]) == 0:
+                headline = writer.add_outline_item(title=line[5:], page_number=int(line[1:5]))
 
-    #with open(PDF+'.txt') as file:      #recovering Table of Contents
-    for line in ToC:
-        if int(line[0]) == 0:
-            headline = writer.add_outline_item(
-            title=line[5:],
-            page_number=int(line[1:5])
-            )
-        elif int(line[0]) == 1:
-            sub_headline = writer.add_outline_item(
-            title=line[5:],
-            page_number=int(line[1:5]),
-            parent=headline
-                    )
-        elif int(line[0]) == 2:
-            writer.add_outline_item(
-            title=(line[5:]),
-            page_number=int(line[1:5]),
-            parent=sub_headline
-                    )
+            elif int(line[0]) == 1:
+                sub_headline = writer.add_outline_item(title=line[5:], page_number=int(line[1:5]), parent=headline)
+
+            elif int(line[0]) == 2:
+                writer.add_outline_item(title=(line[5:]), page_number=int(line[1:5]), parent=sub_headline)
+
+        if len(file.readlist()) == 0:
+            txtDebug.configure(state='normal')
+            txtDebug.delete('1.0','end')
+            txtDebug.insert(index=1.0, chars='Table of Contents added')
+            txtDebug.configure(state='disabled')
+            root.update()
+
     writer.write(PDF)
     os.remove(PDF+'.txt')
 
@@ -246,10 +253,9 @@ def cOutline(outline: List[Union[Destionation, List[Destination]]],
               reader: PdfReader,
               level: int = 0
               ) -> None:
-    global ToC
 
             #strips the Table of Contents info from the PDF
-    with open(PDF+'.txt', 'a') as o:
+    with open(PDF+'.txt', 'w') as o:
         for item in outline:
             if isinstance(item, list):
                 cOutline(item, reader, level+1)
@@ -260,12 +266,13 @@ def cOutline(outline: List[Union[Destionation, List[Destination]]],
                 if pageNum is None:
                     continue
                 else:
-                    ToC.append(str(depth) + '%04d'%pageNum + item.title + '\n')
-            
-            #sorts the Table of Contents and writes it into a temp file
-    with open(PDF+'.txt', 'w') as w:
-        for line in ToC:
-            w.write(line)
+                    o.append(str(depth) + '%04d'%pageNum + item.title)
+
+    txtDebug.configure(state='normal')
+    txtDebug.delete('1.0','end')
+    txtDebug.insert(index=1.0, chars='Table of Contents preserved')
+    txtDebug.configure(state='disabled')
+    root.update()
 
 '''
     #editing the PDF
@@ -296,17 +303,17 @@ addText.place(x=275,y=5)
 
 #texts
     #dir text box
-text = tk.Text(root, height=1, width=50, font=('Helvetica', 10), state='disabled', bg='gray')
-text.place(x=75,y=45)
+text = tk.Text(root, height=1, width=63, font=('Helvetica', 10), state='disabled', bg='gray')
+text.place(x=76,y=45)
 
     #File Path:
-FilePthTxt = tk.Text(root, height=1, width=8, font=('Helvetica',10), bg='gray', relief='flat')
+FilePthTxt = tk.Text(root, height=1, width=9, font=('Helvetica',10), bg='gray', relief='flat')
 FilePthTxt.place(x=5,y=45)
 FilePthTxt.insert(index=1.0, chars='File Path:')
 FilePthTxt.configure(state='disabled')
 
     #debug  -> turn into a loading bar (maybe keep the text)
-txtDebug = tk.Text(root, height=1, font=('Helvetica',10), bg='gray', relief='flat')
+txtDebug = tk.Text(root, height=1, width=72, font=('Helvetica',10), bg='gray', relief='flat')
 txtDebug.place(x=5,y=75)
 
 #sounds (is it really needed?)
