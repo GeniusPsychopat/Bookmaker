@@ -78,7 +78,6 @@ def Cpdf():
         Cbrnch = tk.Toplevel(root, bg='gray')
         Cbrnch.title('Create PDF')
         Cbrnch.geometry("200x120")
-       # Cbrnch.iconbitmap(default='Icon.png')
         Cbrnch.resizable(width=False, height=False)
 
         tk.Checkbutton(Cbrnch, text='Generate text', variable=choice, onvalue=1, offvalue=0, bg='gray').pack(anchor='w')
@@ -89,6 +88,7 @@ def Cpdf():
 
     #continuation of Cpdf
 def Cont():
+    global imgs
 
     Choice = choice.get()                                                   #conversion has to be done here, else everything breaks
     
@@ -110,10 +110,17 @@ def Cont():
         if not file.endswith(".jpg"):          
             continue
         path = os.path.join(dir, file)
-        imgs.append(path)                                              
+        imgs.append(path)                                 
 
-    imgs.sort(key=str.lower)    #sorts list numericaly and by length (to tolerate double-page names like "10-11")
-    imgs.sort(key=len)
+    try: imgs.sort(key=lambda s:int(s[len(dir) + 1:s.find('-')]))           #tries to sort pages, if the naming is inconsistent the error will pop up
+    except ValueError:
+        try: imgs.sort(key=lambda s:int(s[len(dir) + 1:s.find('_')]))
+        except ValueError:
+            try: imgs.sort(key=lambda s:int(s[len(dir) + 1:s.find(' ')]))
+            except ValueError:
+                try: imgs.sort(key=lambda s:int(s[len(dir) + 1:s.find('.')]))
+                except ValueError:
+                    print('Inconsistent or bad naming scheme')
 
     if deuce.get() == 1:        #splits the double-page if the option was selected
         for img in imgs:
@@ -143,7 +150,7 @@ def Cont():
     #Debug -- turn into a loading bar for prod
     txtDebug.configure(state='normal')
     txtDebug.delete('1.0','end')
-    txtDebug.insert(index=1.0,chars='Cont finished')
+    txtDebug.insert(index=1.0,chars='PDF created')
     txtDebug.configure(state='disabled')
 
     #Generating text
@@ -287,7 +294,7 @@ def Epdf():
 root.title('Bookmaker')
 root.geometry("600x400")
 root.configure(bg="gray")
-#root.iconbitmap("Icon.ico")  Fix once the main part of the code is functional, proving to be a bit of a problem
+root.iconphoto(True, tk.PhotoImage(file="Icon.png"))  #Fix once the main part of the code is functional, proving to be a bit of a problem
 root.resizable(width=False, height=False)
 
 #GUI
@@ -307,10 +314,10 @@ addText.place(x=275,y=5)
 #texts
     #dir text box
 text = tk.Text(root, height=1, width=63, font=('Helvetica', 10), state='disabled', bg='gray')
-text.place(x=76,y=45)
+text.place(x=74,y=45)
 
     #File Path:
-FilePthTxt = tk.Text(root, height=1, width=9, font=('Helvetica',10), bg='gray', relief='flat')
+FilePthTxt = tk.Text(root, height=1, width=8, font=('Helvetica',10), bg='gray', relief='flat')
 FilePthTxt.place(x=5,y=45)
 FilePthTxt.insert(index=1.0, chars='File Path:')
 FilePthTxt.configure(state='disabled')
