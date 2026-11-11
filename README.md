@@ -18,22 +18,14 @@ but I wanted something fully fleshed-out
 The whole thing is python coded, the OCR is done with pytesseract (a wrapper for Google OCR). I am no profesional, I am mostly learning as I go,
 so the code can have some weak links.
 
-So far only Linux compatibility is worked on, but I would like to make it Windows compatible as well. (No clue about the difficulty of this)
-
 ## When?
-The core part of the code is **done**, as well as the text generation and bookmark preservation. Current efforts are focused on PDF edit, but since the most important part of the code is functional, I'm not gonna make any guarantees. 
-The project was shelved for a bit, but I am eager to get it out as soon as possible.
-
-## To-Do list
- - PDF edit
- - Generated-text edit
- - UI overhaul
- - Win compatibility
-
-*Note: None of these are set in stone, if I find that they are out of reach for me, I will drop them.*
+The core part of the code is **done**, including the text generation and bookmark preservation. 
+Since the project reached it's intended point, the updates will slow down a bit. Next efforts are gonna be focused on further optimization, edge-case handeling and functionality on Win.
+Plans for some light PDF edit (option to manualy fix page ordering and text generation mistakes) and packing the program into an executable, are in the works, but I'm not making any promises. 
 
 ## Install and usage
-*Note: This app requires git (for cloning the repo) and Python installed on your machine to work*
+*Note: This app requires git (for cloning the repo) and Python installed on your machine to work.*
+*Note 2: Currently tested only on linux, Win is not supported.*
 
 1. Download the zip and extract, or git clone the repo wherever you need it.
 ```

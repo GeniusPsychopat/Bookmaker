@@ -4,8 +4,8 @@ V2 – Bare-bones UI ✓
 V3 - Generating text ✓
 V4 - Creating Table of Contents through PdfEdit ✓
 V5 - Basic PDF edit
-V6 - Basic Text edit 
-V7 - polish UI
+V6 - polish UI
+V7 - pack into an executable
 '''
 
 
@@ -16,11 +16,12 @@ from tkinter import filedialog, dnd, Button, IntVar #GUI
 import os                                           #file manipulation
 import glob                                         #file manipulation
 import pytesseract                                  #machine-text reading
-#from pdf2image import convert_from_path            #conversion from pdf to an img
+from pdf2image import convert_from_path             #conversion from pdf to an img
 from PIL import Image, ImageFile                    #img manipulationi
 from pypdf import PdfWriter, PdfReader              #PDF manipulation
 from typing import List, Union                 
 import shutil
+import re
 
 from pypdf.generic import Destination
 from pdf2image.exceptions import (
@@ -44,6 +45,12 @@ deuce = tk.IntVar()                                 #option for splitting double
 bckp = tk.IntVar()                                  #option for creating a backup of the folder with pictures
 
 #functions
+    #img sort
+def img_sort(s):
+    directory = s[len(dir)+1:]
+    match = re.split('\\D', directory)
+    return int(match[0])
+
     #dir search
 def Open():
     global dir
@@ -77,7 +84,7 @@ def Cpdf():
         
         Cbrnch = tk.Toplevel(root, bg='gray')
         Cbrnch.title('Create PDF')
-        Cbrnch.geometry("200x120")
+        Cbrnch.geometry("200x115")
         Cbrnch.resizable(width=False, height=False)
 
         tk.Checkbutton(Cbrnch, text='Generate text', variable=choice, onvalue=1, offvalue=0, bg='gray').pack(anchor='w')
@@ -95,7 +102,7 @@ def Cont():
         #Debug -- turn into a loading bar for prod
     txtDebug.configure(state='normal')    
     txtDebug.delete('1.0','end')
-    txtDebug.insert(index=1.0,chars='Cont initialized')
+    txtDebug.insert(index=1.0,chars='Pre-processing initialized')
     txtDebug.configure(state='disabled')
 
     Cbrnch.destroy()
@@ -104,25 +111,25 @@ def Cont():
     if bckp.get() == 1:
        shutil.copytree(dir, dir + '.bckp') 
 
-    page = 1
-
     for file in os.listdir(dir):
         if not file.endswith(".jpg"):          
             continue
         path = os.path.join(dir, file)
         imgs.append(path)                                 
 
-    try: imgs.sort(key=lambda s:int(s[len(dir) + 1:s.find('-')]))           #tries to sort pages, if the naming is inconsistent the error will pop up
+    try: imgs.sort(key=img_sort)                           #tries to sort pages, if the naming is inconsistent the error will pop up
     except ValueError:
-        try: imgs.sort(key=lambda s:int(s[len(dir) + 1:s.find('_')]))
-        except ValueError:
-            try: imgs.sort(key=lambda s:int(s[len(dir) + 1:s.find(' ')]))
-            except ValueError:
-                try: imgs.sort(key=lambda s:int(s[len(dir) + 1:s.find('.')]))
-                except ValueError:
-                    print('Inconsistent or bad naming scheme')
+        print('Inconsistent or bad naming scheme')
+        raise SystemExit
 
+    page = 1
     if deuce.get() == 1:        #splits the double-page if the option was selected
+
+        txtDebug.configure(state='normal')
+        txtDebug.delete('1.0','end')
+        txtDebug.insert(index=1.0,chars='Spliting pages')
+        txtDebug.configure(state='disabled')
+
         for img in imgs:
             w, h = Image.open(img).size
             if w > h:
@@ -165,7 +172,7 @@ def txtGen():       #average time for txtGen is 13 pages per minute, add a count
     for img in imgs:
         with open(dir+str(p)+'.pdf', 'w+b') as pdf:
             pdf.write(pytesseract.image_to_pdf_or_hocr(img, extension='pdf', lang='ces+eng'))
-            pdfs.append(dir+str(p)+'.pdf')
+            pdfs.append(dir+'/'+str(p)+'.pdf')
         p += 1
         
         if p % 2 == 0:
